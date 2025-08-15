@@ -1,0 +1,252 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User Management
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String
+  role      UserRole @default(STAFF)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  createdBatches Batch[]
+  createdClasses Class[]
+  studentLogs    StudentLog[]
+  feeCollections FeeCollection[]
+
+  @@map("users")
+}
+
+enum UserRole {
+  ADMIN
+  STAFF
+}
+
+// Academic Structure
+model Batch {
+  id          String   @id @default(cuid())
+  name        String   @unique // e.g., "2024-2025"
+  startYear   Int
+  endYear     Int
+  isActive    Boolean  @default(true)
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  createdBy User    @relation(fields: [createdById], references: [id])
+  classes   Class[]
+
+  @@map("batches")
+}
+
+model Class {
+  id          String   @id @default(cuid())
+  name        String   // e.g., "Grade 1", "Class 10"
+  section     String?  // Optional section like "A", "B"
+  batchId     String
+  capacity    Int?
+  isActive    Boolean  @default(true)
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  batch           Batch             @relation(fields: [batchId], references: [id])
+  createdBy       User              @relation(fields: [createdById], references: [id])
+  subjects        Subject[]
+  feeStructures   FeeStructure[]
+  studentClasses  StudentClass[]
+
+  @@unique([name, section, batchId])
+  @@map("classes")
+}
+
+// Student Management
+model Student {
+  id              String    @id @default(cuid())
+  admissionNumber String    @unique
+  firstName       String
+  lastName        String
+  dateOfBirth     DateTime?
+  gender          Gender?
+  email           String?
+  phone           String?
+  address         String?
+  guardianName    String?
+  guardianPhone   String?
+  guardianEmail   String?
+  profilePictures String[] // Array of image URLs
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  studentClasses StudentClass[]
+  studentLogs    StudentLog[]
+  feeCollections FeeCollection[]
+
+  @@map("students")
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+// Junction table for Student-Class relationship
+model StudentClass {
+  id        String   @id @default(cuid())
+  studentId String
+  classId   String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  student           Student                 @relation(fields: [studentId], references: [id])
+  class             Class                   @relation(fields: [classId], references: [id])
+  studentSubjects   StudentClassSubject[]
+
+  @@unique([studentId, classId])
+  @@map("student_classes")
+}
+
+// Subject Management
+model Subject {
+  id          String      @id @default(cuid())
+  name        String
+  code        String?
+  type        SubjectType @default(CORE)
+  classId     String
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  class           Class                 @relation(fields: [classId], references: [id])
+  studentSubjects StudentClassSubject[]
+
+  @@unique([name, classId])
+  @@map("subjects")
+}
+
+enum SubjectType {
+  CORE
+  ELECTIVE
+  EXTRA_CURRICULAR
+}
+
+// Junction table for Student-Class-Subject relationship
+model StudentClassSubject {
+  id              String   @id @default(cuid())
+  studentClassId  String
+  subjectId       String
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  studentClass StudentClass @relation(fields: [studentClassId], references: [id])
+  subject      Subject      @relation(fields: [subjectId], references: [id])
+
+  @@unique([studentClassId, subjectId])
+  @@map("student_class_subjects")
+}
+
+// Fee Management
+model FeeStructure {
+  id          String    @id @default(cuid())
+  name        String    // e.g., "Tuition Fee", "Library Fee"
+  amount      Decimal   @db.Decimal(10, 2)
+  type        FeeType   @default(MONTHLY)
+  classId     String
+  isActive    Boolean   @default(true)
+  dueDate     DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  class          Class           @relation(fields: [classId], references: [id])
+  feeCollections FeeCollection[]
+
+  @@unique([name, classId])
+  @@map("fee_structures")
+}
+
+enum FeeType {
+  MONTHLY
+  QUARTERLY
+  HALF_YEARLY
+  YEARLY
+  ONE_TIME
+}
+
+model FeeCollection {
+  id             String            @id @default(cuid())
+  studentId      String
+  feeStructureId String
+  amountPaid     Decimal           @db.Decimal(10, 2)
+  paymentDate    DateTime
+  paymentMethod  PaymentMethod     @default(CASH)
+  status         PaymentStatus     @default(PAID)
+  remarks        String?
+  receiptNumber  String?           @unique
+  collectedById  String
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  // Relations
+  student      Student      @relation(fields: [studentId], references: [id])
+  feeStructure FeeStructure @relation(fields: [feeStructureId], references: [id])
+  collectedBy  User         @relation(fields: [collectedById], references: [id])
+
+  @@map("fee_collections")
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  CHEQUE
+  ONLINE
+  UPI
+}
+
+enum PaymentStatus {
+  PAID
+  PARTIAL
+  PENDING
+  OVERDUE
+}
+
+// Audit Log for Student Changes
+model StudentLog {
+  id        String   @id @default(cuid())
+  studentId String
+  field     String   // Field that was changed
+  oldValue  String?  // Previous value
+  newValue  String?  // New value
+  action    String   // CREATE, UPDATE, DELETE
+  userId    String   // Who made the change
+  createdAt DateTime @default(now())
+
+  // Relations
+  student Student @relation(fields: [studentId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@map("student_logs")
+}
