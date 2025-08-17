@@ -25,12 +25,12 @@ interface Student {
       }
     }
   }[]
-  feePayments: FeePayment[]
+  feeCollections: FeePayment[]
 }
 
 interface FeePayment {
   id: string
-  amount: number
+  amountPaid: number
   paymentDate: string
   paymentMethod: string
   status: string
@@ -54,7 +54,7 @@ export default function PaymentHistoryDialog({ open, onOpenChange, student }: Pa
   useEffect(() => {
     if (student) {
       setPayments(
-        (student.feePayments ?? []).sort((a, b) => new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime()),
+        (student.feeCollections ?? []).sort((a, b) => new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime()),
       )
     }
   }, [student])
@@ -63,7 +63,7 @@ export default function PaymentHistoryDialog({ open, onOpenChange, student }: Pa
 
   const totalPaid = payments
     .filter((payment) => payment.status === "PAID")
-    .reduce((sum, payment) => sum + payment.amount, 0)
+    .reduce((sum, payment) => sum + Number(payment.amountPaid), 0)
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -146,7 +146,7 @@ export default function PaymentHistoryDialog({ open, onOpenChange, student }: Pa
                   <TableHeader>
                     <TableRow>
                       <TableHead>Date</TableHead>
-                      <TableHead>Fee Type</TableHead>
+                      {/* <TableHead>Fee Type</TableHead> */}
                       <TableHead>Amount</TableHead>
                       <TableHead>Method</TableHead>
                       <TableHead>Status</TableHead>
@@ -157,8 +157,8 @@ export default function PaymentHistoryDialog({ open, onOpenChange, student }: Pa
                     {payments.map((payment) => (
                       <TableRow key={payment.id}>
                         <TableCell>{format(new Date(payment.paymentDate), "MMM dd, yyyy")}</TableCell>
-                        <TableCell>{payment.feeStructure.feeType}</TableCell>
-                        <TableCell>₹{payment.amount.toLocaleString()}</TableCell>
+                        {/* <TableCell>{payment.feeStructure.feeType}</TableCell> */}
+                        <TableCell>₹{payment.amountPaid.toLocaleString()}</TableCell>
                         <TableCell>{getPaymentMethodBadge(payment.paymentMethod)}</TableCell>
                         <TableCell>{getStatusBadge(payment.status)}</TableCell>
                         <TableCell>{payment.remarks || "-"}</TableCell>

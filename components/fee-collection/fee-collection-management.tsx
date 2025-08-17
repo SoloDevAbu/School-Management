@@ -30,12 +30,12 @@ interface Student {
       }
     }
   }[]
-  feePayments: FeePayment[]
+  feeCollections: FeePayment[]
 }
 
 interface FeePayment {
   id: string
-  amount: number
+  amountPaid: number
   paymentDate: string
   paymentMethod: string
   status: string
@@ -151,10 +151,11 @@ export default function FeeCollectionManagement() {
     )
 
     if (applicableFees.length === 0) return "no-fees"
+    console.log("student response", student)
 
-    const paidFees = (student.feePayments ?? []).filter((payment) => payment.status === "PAID")
+    const paidFees = (student.feeCollections ?? []).filter((payment) => payment.status === "PAID")
     const totalDue = applicableFees.reduce((sum, fee) => sum + fee.amount, 0)
-    const totalPaid = paidFees.reduce((sum, payment) => sum + payment.amount, 0)
+    const totalPaid = paidFees.reduce((sum, payment) => sum + payment.amountPaid, 0)
 
     if (totalPaid >= totalDue) return "paid"
 
@@ -203,9 +204,9 @@ export default function FeeCollectionManagement() {
     )
     const totalDue = applicableFees.reduce((sum, fee) => sum + Number(fee.amount), 0)
 
-    const totalPaid = (student.feePayments ?? [])
+    const totalPaid = (student.feeCollections ?? [])
       .filter((payment) => payment.status === "PAID")
-      .reduce((sum, payment) => sum + Number(payment.amount), 0)
+      .reduce((sum, payment) => sum + Number(payment.amountPaid), 0)
 
     return Math.max(0, totalDue - totalPaid)
   }

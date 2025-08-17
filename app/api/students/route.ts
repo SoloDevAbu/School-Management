@@ -66,6 +66,16 @@ export async function GET(request: Request) {
             createdAt: "desc",
           },
         },
+        feeCollections: {
+          include: {
+            feeStructures: {
+              select: {
+                feeCollectionId: true,
+                feeStructureId: true
+              }
+            }
+          }
+        }
       },
       orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
     })

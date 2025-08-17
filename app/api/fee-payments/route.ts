@@ -16,42 +16,42 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "Missing required fields" }, { status: 400 })
     }
 
-    // Create fee payment record
-    const feePayment = await prisma.feeCollection.create({
-      data: {
-        studentId,
-        amountPaid: Number.parseFloat(amount),
-        paymentMethod,
-        remarks,
-        status: "PAID",
-        paymentDate: new Date(),
-        collectedById: session.user.id,
-        // Link to the first fee structure for reference
-        feeStructureId: feeStructureIds[0],
-      },
-      include: {
-        feeStructure: true,
-      },
-    })
-
-    // Create audit log
-    await prisma.studentLog.create({
-      data: {
-        studentId,
-        action: "CREATE",
-        entityType: "FeePayment",
-        entityId: feePayment.id,
-        changes: {
+    const result = await prisma.$transaction(async (tx) => {
+      const feePayment = await tx.feeCollection.create({
+        data: {
           studentId,
-          amount,
+          amountPaid: Number.parseFloat(amount),
           paymentMethod,
+          remarks,
           status: "PAID",
+          paymentDate: new Date(),
+          collectedById: session.user.id,
+        }
+      })
+
+      for (const fsId of feeStructureIds) {
+        await tx.feeCollectionStructure.create({
+          data: {
+            feeCollectionId: feePayment.id,
+            feeStructureId: fsId,
+          },
+        })
+      }
+  
+      // Create audit log
+      await tx.studentLog.create({
+        data: {
+          studentId,
+          field: "FeePayment",
+          action: "CREATE",
+          userId: session.user.id,
         },
-        userId: session.user.id,
-      },
+      })
+
+      return feePayment;
     })
 
-    return NextResponse.json(feePayment)
+    return NextResponse.json(result)
   } catch (error) {
     console.error("Error creating fee payment:", error)
     return NextResponse.json({ message: "Internal server error" }, { status: 500 })

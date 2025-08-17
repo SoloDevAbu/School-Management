@@ -30,12 +30,12 @@ interface Student {
       }
     }
   }[]
-  feePayments: FeePayment[]
+  feeCollections: FeePayment[]
 }
 
 interface FeePayment {
   id: string
-  amount: number
+  amountPaid: number
   paymentDate: string
   paymentMethod: string
   status: string
@@ -99,9 +99,9 @@ export default function CollectFeeDialog({
       setApplicableFees(fees)
 
       const due = fees.reduce((sum, fee) => sum + Number(fee.amount), 0)
-      const paid = (student.feePayments ?? [])
+      const paid = (student.feeCollections ?? [])
         .filter((payment) => payment.status === "PAID")
-        .reduce((sum, payment) => sum + Number(payment.amount), 0)
+        .reduce((sum, payment) => sum + Number(payment.amountPaid), 0)
 
       setTotalDue(due)
       setTotalPaid(paid)

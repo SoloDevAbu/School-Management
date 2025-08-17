@@ -55,8 +55,8 @@ model Batch {
 
 model Class {
   id          String   @id @default(cuid())
-  name        String   // e.g., "Grade 1", "Class 10"
-  section     String?  // Optional section like "A", "B"
+  name        String // e.g., "Grade 1", "Class 10"
+  section     String? // Optional section like "A", "B"
   batchId     String
   capacity    Int?
   isActive    Boolean  @default(true)
@@ -65,11 +65,11 @@ model Class {
   updatedAt   DateTime @updatedAt
 
   // Relations
-  batch           Batch             @relation(fields: [batchId], references: [id])
-  createdBy       User              @relation(fields: [createdById], references: [id])
-  subjects        Subject[]
-  feeStructures   FeeStructure[]
-  studentClasses  StudentClass[]
+  batch          Batch          @relation(fields: [batchId], references: [id])
+  createdBy      User           @relation(fields: [createdById], references: [id])
+  subjects       Subject[]
+  feeStructures  FeeStructure[]
+  studentClasses StudentClass[]
 
   @@unique([name, section, batchId])
   @@map("classes")
@@ -118,9 +118,9 @@ model StudentClass {
   updatedAt DateTime @updatedAt
 
   // Relations
-  student           Student                 @relation(fields: [studentId], references: [id])
-  class             Class                   @relation(fields: [classId], references: [id])
-  studentSubjects   StudentClassSubject[]
+  student         Student               @relation(fields: [studentId], references: [id])
+  class           Class                 @relation(fields: [classId], references: [id])
+  studentSubjects StudentClassSubject[]
 
   @@unique([studentId, classId])
   @@map("student_classes")
@@ -128,14 +128,14 @@ model StudentClass {
 
 // Subject Management
 model Subject {
-  id          String      @id @default(cuid())
-  name        String
-  code        String?
-  type        SubjectType @default(CORE)
-  classId     String
-  isActive    Boolean     @default(true)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id        String      @id @default(cuid())
+  name      String
+  code      String?
+  type      SubjectType @default(CORE)
+  classId   String
+  isActive  Boolean     @default(true)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
 
   // Relations
   class           Class                 @relation(fields: [classId], references: [id])
@@ -153,12 +153,12 @@ enum SubjectType {
 
 // Junction table for Student-Class-Subject relationship
 model StudentClassSubject {
-  id              String   @id @default(cuid())
-  studentClassId  String
-  subjectId       String
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id             String   @id @default(cuid())
+  studentClassId String
+  subjectId      String
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   // Relations
   studentClass StudentClass @relation(fields: [studentClassId], references: [id])
@@ -170,19 +170,19 @@ model StudentClassSubject {
 
 // Fee Management
 model FeeStructure {
-  id          String    @id @default(cuid())
-  name        String    // e.g., "Tuition Fee", "Library Fee"
-  amount      Decimal   @db.Decimal(10, 2)
-  type        FeeType   @default(MONTHLY)
-  classId     String
-  isActive    Boolean   @default(true)
-  dueDate     DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id        String    @id @default(cuid())
+  name      String // e.g., "Tuition Fee", "Library Fee"
+  amount    Decimal   @db.Decimal(10, 2)
+  type      FeeType   @default(MONTHLY)
+  classId   String
+  isActive  Boolean   @default(true)
+  dueDate   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   // Relations
-  class          Class           @relation(fields: [classId], references: [id])
-  feeCollections FeeCollection[]
+  class                  Class                    @relation(fields: [classId], references: [id])
+  feeCollectionStructure FeeCollectionStructure[]
 
   @@unique([name, classId])
   @@map("fee_structures")
@@ -197,25 +197,33 @@ enum FeeType {
 }
 
 model FeeCollection {
-  id             String            @id @default(cuid())
+  id             String        @id @default(cuid())
   studentId      String
-  feeStructureId String
-  amountPaid     Decimal           @db.Decimal(10, 2)
+  amountPaid     Decimal       @db.Decimal(10, 2)
   paymentDate    DateTime
-  paymentMethod  PaymentMethod     @default(CASH)
-  status         PaymentStatus     @default(PAID)
+  paymentMethod  PaymentMethod @default(CASH)
+  status         PaymentStatus @default(PAID)
   remarks        String?
-  receiptNumber  String?           @unique
+  receiptNumber  String?       @unique
   collectedById  String
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
   // Relations
-  student      Student      @relation(fields: [studentId], references: [id])
-  feeStructure FeeStructure @relation(fields: [feeStructureId], references: [id])
-  collectedBy  User         @relation(fields: [collectedById], references: [id])
+  student       Student                  @relation(fields: [studentId], references: [id])
+  collectedBy   User                     @relation(fields: [collectedById], references: [id])
+  feeStructures FeeCollectionStructure[]
 
   @@map("fee_collections")
+}
+
+model FeeCollectionStructure {
+  id              String @id @default(cuid())
+  feeCollectionId String
+  feeStructureId  String
+
+  feeCollection FeeCollection @relation(fields: [feeCollectionId], references: [id])
+  feeStructure  FeeStructure  @relation(fields: [feeStructureId], references: [id])
 }
 
 enum PaymentMethod {
@@ -237,11 +245,11 @@ enum PaymentStatus {
 model StudentLog {
   id        String   @id @default(cuid())
   studentId String
-  field     String   // Field that was changed
-  oldValue  String?  // Previous value
-  newValue  String?  // New value
-  action    String   // CREATE, UPDATE, DELETE
-  userId    String   // Who made the change
+  field     String // Field that was changed
+  oldValue  String? // Previous value
+  newValue  String? // New value
+  action    String // CREATE, UPDATE, DELETE
+  userId    String // Who made the change
   createdAt DateTime @default(now())
 
   // Relations
