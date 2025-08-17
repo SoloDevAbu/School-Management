@@ -286,7 +286,7 @@ export default function FeeReportsManagement() {
               <TableRow>
                 <TableHead>Date</TableHead>
                 <TableHead>Student</TableHead>
-                <TableHead>Class</TableHead>
+                {/* <TableHead>Class</TableHead> */}
                 <TableHead>Amount</TableHead>
                 <TableHead>Method</TableHead>
                 <TableHead>Status</TableHead>
@@ -297,7 +297,7 @@ export default function FeeReportsManagement() {
                 <TableRow key={payment.id}>
                   <TableCell>{format(new Date(payment.paymentDate), "MMM dd, yyyy")}</TableCell>
                   <TableCell className="font-medium">{payment.studentName}</TableCell>
-                  <TableCell>{payment.className}</TableCell>
+                  {/* <TableCell>{payment.className}</TableCell> */}
                   <TableCell>₹{payment.amount.toLocaleString()}</TableCell>
                   <TableCell>
                     <Badge variant="outline">{payment.paymentMethod}</Badge>

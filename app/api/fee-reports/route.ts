@@ -11,39 +11,84 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
-    const batch = searchParams.get("batch")
-    const className = searchParams.get("class")
+    const batchId = searchParams.get("batchId")
+    const classId = searchParams.get("classId")
+    const search = searchParams.get("search")
     const reportType = searchParams.get("type") || "summary"
 
     // Build where clause for filtering
-    const classWhere: any = {}
-    if (batch && batch !== "all") {
-      classWhere.batch = { name: batch }
+    const whereClause: any = {}
+
+    // Filter by search term
+    if (search) {
+      whereClause.OR = [
+        { firstName: { contains: search, mode: "insensitive" } },
+        { lastName: { contains: search, mode: "insensitive" } },
+        { admissionNumber: { contains: search, mode: "insensitive" } },
+        { email: { contains: search, mode: "insensitive" } },
+      ]
     }
-    if (className && className !== "all") {
-      classWhere.name = className
+
+    // Filter by class or batch
+    if (classId) {
+      whereClause.studentClasses = {
+        some: {
+          classId,
+          isActive: true,
+        },
+      }
+    } else if (batchId) {
+      whereClause.studentClasses = {
+        some: {
+          class: {
+            batchId,
+          },
+          isActive: true,
+        },
+      }
     }
 
     // Get students with their fee payments and class information
     const students = await prisma.student.findMany({
-      where: Object.keys(classWhere).length > 0 ? { class: classWhere } : {},
+      where: whereClause,
       include: {
-        class: {
+        studentClasses: {
           include: {
-            batch: true,
+            class: {
+              select: {
+                id: true,
+                name: true,
+                section: true,
+                isActive: true,
+                batch: {
+                  select: {
+                    name: true
+                  }
+                }
+              }
+            }
           },
+          orderBy: {
+            createdAt: "desc",
+          }
         },
-        feePayments: {
+        feeCollections: {
           include: {
-            feeStructure: true,
-          },
-        },
-      },
+            feeStructures: {
+              select: {
+                feeCollectionId: true,
+                feeStructureId: true
+              }
+            }
+          }
+        }
+      }
+      
     })
 
     // Get fee structures for the filtered classes
     const feeStructures = await prisma.feeStructure.findMany({
-      where: Object.keys(classWhere).length > 0 ? { class: classWhere } : {},
+      where: whereClause,
       include: {
         class: {
           include: {
@@ -61,7 +106,7 @@ export async function GET(request: NextRequest) {
     // Group students by class
     const studentsByClass = students.reduce(
       (acc, student) => {
-        const key = `${student.class.name}-${student.class.batch.name}`
+        const key = `${student.studentClasses.includes}-${student.studentClasses.includes(batchId)}`
         if (!acc[key]) {
           acc[key] = []
         }
@@ -80,13 +125,13 @@ export async function GET(request: NextRequest) {
         (fs) => fs.class.name === className && fs.class.batch.name === batchName,
       )
 
-      const classTotalDue = classFeeStructures.reduce((sum, fs) => sum + fs.amount, 0) * classStudents.length
+      const classTotalDue = classFeeStructures.reduce((sum, fs) => sum + Number(fs.amount), 0) * classStudents.length
       const classTotalCollected = classStudents.reduce((sum, student) => {
         return (
           sum +
-          student.feePayments
+          student.feeCollections
             .filter((payment) => payment.status === "PAID")
-            .reduce((paymentSum, payment) => paymentSum + payment.amount, 0)
+            .reduce((paymentSum, payment) => paymentSum + Number(payment.amountPaid), 0)
         )
       }, 0)
 
@@ -105,7 +150,7 @@ export async function GET(request: NextRequest) {
     })
 
     // Get recent payments
-    const recentPayments = await prisma.feePayment.findMany({
+    const recentPayments = await prisma.feeCollection.findMany({
       take: 10,
       orderBy: {
         paymentDate: "desc",
@@ -113,7 +158,7 @@ export async function GET(request: NextRequest) {
       include: {
         student: {
           include: {
-            class: true,
+            studentClasses: true
           },
         },
       },
@@ -131,8 +176,8 @@ export async function GET(request: NextRequest) {
       recentPayments: recentPayments.map((payment) => ({
         id: payment.id,
         studentName: `${payment.student.firstName} ${payment.student.lastName}`,
-        className: payment.student.class.name,
-        amount: payment.amount,
+        className: payment.student.studentClasses,
+        amount: payment.amountPaid,
         paymentDate: payment.paymentDate,
         paymentMethod: payment.paymentMethod,
         status: payment.status,
