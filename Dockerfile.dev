@@ -1,0 +1,29 @@
+# Development Dockerfile
+FROM node:18-alpine
+
+# Enable Corepack and set up Yarn
+RUN corepack enable && corepack prepare yarn@4.9.1 --activate
+
+# Set working directory
+WORKDIR /app
+
+# Install dependencies first (for better caching)
+COPY package.json yarn.lock .yarnrc.yml* ./
+COPY .yarn .yarn
+RUN yarn install
+
+# Copy source code
+COPY . .
+
+# Copy and make entrypoint script executable
+COPY entrypoint-dev.sh /entrypoint-dev.sh
+RUN chmod +x /entrypoint-dev.sh
+
+# Generate Prisma client (this will be regenerated on container start for volume mounts)
+RUN npx prisma generate
+
+# Expose port
+EXPOSE 3000
+
+# Use entrypoint script
+ENTRYPOINT ["/entrypoint-dev.sh"]
