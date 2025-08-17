@@ -23,6 +23,9 @@ interface Class {
   name: string
   section: string | null
   batchId: string
+  batch: {
+    name: string
+  }
 }
 
 interface CreateStudentDialogProps {
@@ -175,6 +178,7 @@ export function CreateStudentDialog({ open, onOpenChange, onSuccess, batches, cl
                       <SelectItem key={cls.id} value={cls.id}>
                         {cls.name}
                         {cls.section && ` - ${cls.section}`}
+                        {cls.batch && ` (${cls.batch.name})`}
                       </SelectItem>
                     ))}
                   </SelectContent>

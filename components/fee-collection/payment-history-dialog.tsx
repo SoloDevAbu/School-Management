@@ -11,13 +11,20 @@ interface Student {
   id: string
   firstName: string
   lastName: string
-  rollNumber: string
-  class: {
-    name: string
-    batch: {
+  admissionNumber: string
+  studentClasses: {
+    id: string
+    isActive: boolean
+    class: {
+      id: string
       name: string
+      section: string | null
+      batch: {
+        id: string
+        name: string
+      }
     }
-  }
+  }[]
   feePayments: FeePayment[]
 }
 
@@ -47,7 +54,7 @@ export default function PaymentHistoryDialog({ open, onOpenChange, student }: Pa
   useEffect(() => {
     if (student) {
       setPayments(
-        student.feePayments.sort((a, b) => new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime()),
+        (student.feePayments ?? []).sort((a, b) => new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime()),
       )
     }
   }, [student])
@@ -110,11 +117,13 @@ export default function PaymentHistoryDialog({ open, onOpenChange, student }: Pa
                 </div>
                 <div>
                   <p className="text-sm font-medium">Roll Number</p>
-                  <p className="text-sm text-muted-foreground">{student.rollNumber}</p>
+                  <p className="text-sm text-muted-foreground">{student.admissionNumber}</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium">Class</p>
-                  <p className="text-sm text-muted-foreground">{student.class.name}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {student.studentClasses.find(sc => sc.isActive)?.class.name || 'No Class'}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm font-medium">Total Paid</p>

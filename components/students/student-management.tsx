@@ -17,14 +17,21 @@ interface Student {
   admissionNumber: string
   firstName: string
   lastName: string
+  dateOfBirth: string | null
+  gender: string | null
   email: string | null
   phone: string | null
+  address: string | null
+  guardianName: string | null
+  guardianPhone: string | null
+  guardianEmail: string | null
   profilePictures: string[]
   isActive: boolean
   createdAt: string
   studentClasses: {
     id: string
     isActive: boolean
+    createdAt: string
     class: {
       id: string
       name: string
@@ -47,6 +54,9 @@ interface Class {
   name: string
   section: string | null
   batchId: string
+  batch: {
+    name: string
+  }
 }
 
 export function StudentManagement() {
@@ -191,6 +201,7 @@ export function StudentManagement() {
                   <SelectItem key={cls.id} value={cls.id}>
                     {cls.name}
                     {cls.section && ` - ${cls.section}`}
+                    {cls.batch && ` (${cls.batch.name})`}
                   </SelectItem>
                 ))}
               </SelectContent>

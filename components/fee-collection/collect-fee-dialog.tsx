@@ -16,13 +16,20 @@ interface Student {
   id: string
   firstName: string
   lastName: string
-  rollNumber: string
-  class: {
-    name: string
-    batch: {
+  admissionNumber: string
+  studentClasses: {
+    id: string
+    isActive: boolean
+    class: {
+      id: string
       name: string
+      section: string | null
+      batch: {
+        id: string
+        name: string
+      }
     }
-  }
+  }[]
   feePayments: FeePayment[]
 }
 
@@ -67,7 +74,7 @@ export default function CollectFeeDialog({
   feeStructures,
   onSuccess,
 }: CollectFeeDialogProps) {
-  const [amount, setAmount] = useState("")
+  const [amount, setAmount] = useState<Number>(0)
   const [paymentMethod, setPaymentMethod] = useState("")
   const [remarks, setRemarks] = useState("")
   const [loading, setLoading] = useState(false)
@@ -77,25 +84,40 @@ export default function CollectFeeDialog({
 
   useEffect(() => {
     if (student) {
+      const activeClass = student.studentClasses.find((sc) => sc.isActive)
+      if (!activeClass) {
+        setApplicableFees([])
+        setTotalDue(0)
+        setTotalPaid(0)
+        setAmount(0)
+        return
+      }
+
       const fees = feeStructures.filter(
-        (fee) => fee.class.name === student.class.name && fee.class.batch.name === student.class.batch.name,
+        (fee) => fee.class.name === activeClass.class.name && fee.class.batch.name === activeClass.class.batch.name,
       )
       setApplicableFees(fees)
 
-      const due = fees.reduce((sum, fee) => sum + fee.amount, 0)
-      const paid = student.feePayments
+      const due = fees.reduce((sum, fee) => sum + Number(fee.amount), 0)
+      const paid = (student.feePayments ?? [])
         .filter((payment) => payment.status === "PAID")
-        .reduce((sum, payment) => sum + payment.amount, 0)
+        .reduce((sum, payment) => sum + Number(payment.amount), 0)
 
       setTotalDue(due)
       setTotalPaid(paid)
-      setAmount((due - paid).toString())
+      setAmount(due - paid)
     }
   }, [student, feeStructures])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!student || !amount || !paymentMethod) return
+    
+    const activeClass = student.studentClasses.find((sc) => sc.isActive)
+    if (!activeClass) {
+      toast.error("Student is not enrolled in any active class")
+      return
+    }
 
     setLoading(true)
     try {
@@ -106,7 +128,7 @@ export default function CollectFeeDialog({
         },
         body: JSON.stringify({
           studentId: student.id,
-          amount: Number.parseFloat(amount),
+          amount: Number.parseFloat(amount.toString()),
           paymentMethod,
           remarks,
           feeStructureIds: applicableFees.map((fee) => fee.id),
@@ -129,13 +151,14 @@ export default function CollectFeeDialog({
   }
 
   const resetForm = () => {
-    setAmount("")
+    setAmount(0)
     setPaymentMethod("")
     setRemarks("")
   }
 
   if (!student) return null
 
+  const activeClass = student.studentClasses.find((sc) => sc.isActive)
   const outstandingAmount = totalDue - totalPaid
 
   return (
@@ -146,6 +169,17 @@ export default function CollectFeeDialog({
         </DialogHeader>
 
         <div className="space-y-6">
+          {/* Warning if no active class */}
+          {!activeClass && (
+            <Card className="border-yellow-200 bg-yellow-50">
+              <CardContent className="p-4">
+                <p className="text-sm text-yellow-800">
+                  This student is not currently enrolled in any active class. Fee collection is not available.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Student Info */}
           <Card>
             <CardHeader>
@@ -161,15 +195,19 @@ export default function CollectFeeDialog({
                 </div>
                 <div>
                   <Label className="text-sm font-medium">Roll Number</Label>
-                  <p className="text-sm text-muted-foreground">{student.rollNumber}</p>
+                  <p className="text-sm text-muted-foreground">{student.admissionNumber}</p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium">Class</Label>
-                  <p className="text-sm text-muted-foreground">{student.class.name}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {student.studentClasses.find(sc => sc.isActive)?.class.name || 'No Class'}
+                  </p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium">Batch</Label>
-                  <p className="text-sm text-muted-foreground">{student.class.batch.name}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {student.studentClasses.find(sc => sc.isActive)?.class.batch.name || 'No Batch'}
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -199,7 +237,7 @@ export default function CollectFeeDialog({
           </Card>
 
           {/* Payment Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className={`space-y-4 ${!activeClass ? "opacity-50 pointer-events-none" : ""}`}>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="amount">Payment Amount</Label>
@@ -207,8 +245,8 @@ export default function CollectFeeDialog({
                   id="amount"
                   type="number"
                   step="0.01"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
+                  value={amount.toString()}
+                  onChange={(e) => setAmount(Number(e.target.value))}
                   placeholder="Enter amount"
                   required
                 />

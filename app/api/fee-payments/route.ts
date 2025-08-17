@@ -17,35 +17,27 @@ export async function POST(request: NextRequest) {
     }
 
     // Create fee payment record
-    const feePayment = await prisma.feePayment.create({
+    const feePayment = await prisma.feeCollection.create({
       data: {
         studentId,
-        amount: Number.parseFloat(amount),
+        amountPaid: Number.parseFloat(amount),
         paymentMethod,
         remarks,
         status: "PAID",
         paymentDate: new Date(),
-        createdBy: session.user.id,
+        collectedById: session.user.id,
         // Link to the first fee structure for reference
         feeStructureId: feeStructureIds[0],
       },
       include: {
-        student: {
-          include: {
-            class: {
-              include: {
-                batch: true,
-              },
-            },
-          },
-        },
         feeStructure: true,
       },
     })
 
     // Create audit log
-    await prisma.auditLog.create({
+    await prisma.studentLog.create({
       data: {
+        studentId,
         action: "CREATE",
         entityType: "FeePayment",
         entityId: feePayment.id,

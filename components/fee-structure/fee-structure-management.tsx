@@ -245,6 +245,7 @@ export function FeeStructureManagement() {
                   <SelectItem key={cls.id} value={cls.id}>
                     {cls.name}
                     {cls.section && ` - ${cls.section}`}
+                    {cls.batch && ` - ${cls.batch.name}`}
                   </SelectItem>
                 ))}
               </SelectContent>

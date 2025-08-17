@@ -16,13 +16,20 @@ interface Student {
   id: string
   firstName: string
   lastName: string
-  rollNumber: string
-  class: {
-    name: string
-    batch: {
+  admissionNumber: string
+  studentClasses: {
+    id: string
+    isActive: boolean
+    class: {
+      id: string
       name: string
+      section: string | null
+      batch: {
+        id: string
+        name: string
+      }
     }
-  }
+  }[]
   feePayments: FeePayment[]
 }
 
@@ -108,16 +115,20 @@ export default function FeeCollectionManagement() {
         (student) =>
           student.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
           student.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          student.rollNumber.toLowerCase().includes(searchTerm.toLowerCase()),
+          student.admissionNumber.toLowerCase().includes(searchTerm.toLowerCase()),
       )
     }
 
     if (selectedBatch !== "all") {
-      filtered = filtered.filter((student) => student.class.batch.name === selectedBatch)
+      filtered = filtered.filter((student) => 
+        student.studentClasses.some((sc) => sc.isActive && sc.class.batch.name === selectedBatch)
+      )
     }
 
     if (selectedClass !== "all") {
-      filtered = filtered.filter((student) => student.class.name === selectedClass)
+      filtered = filtered.filter((student) => 
+        student.studentClasses.some((sc) => sc.isActive && sc.class.name === selectedClass)
+      )
     }
 
     if (selectedStatus !== "all") {
@@ -131,14 +142,17 @@ export default function FeeCollectionManagement() {
   }
 
   const getPaymentStatus = (student: Student) => {
+    const activeClass = student.studentClasses.find((sc) => sc.isActive)
+    if (!activeClass) return "no-class"
+
     const currentDate = new Date()
     const applicableFees = feeStructures.filter(
-      (fee) => fee.class.name === student.class.name && fee.class.batch.name === student.class.batch.name,
+      (fee) => fee.class.name === activeClass.class.name && fee.class.batch.name === activeClass.class.batch.name,
     )
 
     if (applicableFees.length === 0) return "no-fees"
 
-    const paidFees = student.feePayments.filter((payment) => payment.status === "PAID")
+    const paidFees = (student.feePayments ?? []).filter((payment) => payment.status === "PAID")
     const totalDue = applicableFees.reduce((sum, fee) => sum + fee.amount, 0)
     const totalPaid = paidFees.reduce((sum, payment) => sum + payment.amount, 0)
 
@@ -173,25 +187,36 @@ export default function FeeCollectionManagement() {
             Overdue
           </Badge>
         )
+      case "no-class":
+        return <Badge variant="secondary">No Class</Badge>
       default:
         return <Badge variant="secondary">No Fees</Badge>
     }
   }
 
   const getOutstandingAmount = (student: Student) => {
-    const applicableFees = feeStructures.filter(
-      (fee) => fee.class.name === student.class.name && fee.class.batch.name === student.class.batch.name,
+    const activeClass = student.studentClasses.find((sc) => sc.isActive)
+    if (!activeClass) return 0
+
+    const applicableFees = (feeStructures ?? []).filter(
+      (fee) => fee.class.name === activeClass.class.name && fee.class.batch.name === activeClass.class.batch.name,
     )
-    const totalDue = applicableFees.reduce((sum, fee) => sum + fee.amount, 0)
-    const totalPaid = student.feePayments
+    const totalDue = applicableFees.reduce((sum, fee) => sum + Number(fee.amount), 0)
+
+    const totalPaid = (student.feePayments ?? [])
       .filter((payment) => payment.status === "PAID")
-      .reduce((sum, payment) => sum + payment.amount, 0)
+      .reduce((sum, payment) => sum + Number(payment.amount), 0)
 
     return Math.max(0, totalDue - totalPaid)
   }
 
-  const uniqueBatches = [...new Set(students.map((s) => s.class.batch.name))]
-  const uniqueClasses = [...new Set(students.map((s) => s.class.name))]
+  const uniqueBatches = [...new Set(students.flatMap(s => 
+    s.studentClasses.filter(sc => sc.isActive).map(sc => sc.class.batch.name)
+  ))].filter(Boolean)
+  
+  const uniqueClasses = [...new Set(students.flatMap(s => 
+    s.studentClasses.filter(sc => sc.isActive).map(sc => sc.class.name)
+  ))].filter(Boolean)
 
   if (loading) {
     return <div>Loading...</div>
@@ -296,6 +321,7 @@ export default function FeeCollectionManagement() {
                 <SelectItem value="paid">Paid</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="overdue">Overdue</SelectItem>
+                <SelectItem value="no-class">No Class</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -327,9 +353,9 @@ export default function FeeCollectionManagement() {
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell>{student.rollNumber}</TableCell>
-                  <TableCell>{student.class.name}</TableCell>
-                  <TableCell>{student.class.batch.name}</TableCell>
+                  <TableCell>{student.admissionNumber}</TableCell>
+                  <TableCell>{student.studentClasses.find(sc => sc.isActive)?.class.name || 'No Class'}</TableCell>
+                  <TableCell>{student.studentClasses.find(sc => sc.isActive)?.class.batch.name || 'No Batch'}</TableCell>
                   <TableCell>{getStatusBadge(getPaymentStatus(student))}</TableCell>
                   <TableCell>₹{getOutstandingAmount(student).toLocaleString()}</TableCell>
                   <TableCell>
@@ -341,7 +367,7 @@ export default function FeeCollectionManagement() {
                           setSelectedStudent(student)
                           setCollectFeeOpen(true)
                         }}
-                        disabled={getPaymentStatus(student) === "paid"}
+                        disabled={getPaymentStatus(student) === "paid" || getPaymentStatus(student) === "no-class"}
                       >
                         Collect Fee
                       </Button>
