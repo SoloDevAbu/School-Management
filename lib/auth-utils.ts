@@ -6,7 +6,7 @@ export async function requireAuth() {
   const session = await getServerSession(authOptions)
 
   if (!session) {
-    redirect("/auth/signin")
+    redirect("/signin")
   }
 
   return session
@@ -16,7 +16,7 @@ export async function requireAdmin() {
   const session = await requireAuth()
 
   if (session.user.role !== "ADMIN") {
-    redirect("/dashboard")
+    redirect("/")
   }
 
   return session

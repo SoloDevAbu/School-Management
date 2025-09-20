@@ -15,15 +15,15 @@ interface SidebarProps {
 }
 
 const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: Home },
-  { name: "Users", href: "/dashboard/users", icon: Users, adminOnly: true },
-  { name: "Batches", href: "/dashboard/batches", icon: Calendar },
-  { name: "Classes", href: "/dashboard/classes", icon: BookOpen },
-  { name: "Students", href: "/dashboard/students", icon: GraduationCap },
-  { name: "Subjects", href: "/dashboard/subjects", icon: BookOpen },
-  { name: "Fee Structure", href: "/dashboard/fee-structure", icon: DollarSign },
-  { name: "Fee Collection", href: "/dashboard/fee-collection", icon: DollarSign },
-  { name: "Fee Reports", href: "/dashboard/fee-reports", icon: FileText },
+  { name: "Dashboard", href: "", icon: Home },
+  { name: "Users", href: "/users", icon: Users, adminOnly: true },
+  { name: "Batches", href: "/batches", icon: Calendar },
+  { name: "Classes", href: "/classes", icon: BookOpen },
+  { name: "Students", href: "/students", icon: GraduationCap },
+  { name: "Subjects", href: "/subjects", icon: BookOpen },
+  { name: "Fee Structure", href: "/fee-structure", icon: DollarSign },
+  { name: "Fee Collection", href: "/fee-collection", icon: DollarSign },
+  { name: "Fee Reports", href: "/fee-reports", icon: FileText },
 ]
 
 export function DashboardSidebar({ user }: SidebarProps) {
