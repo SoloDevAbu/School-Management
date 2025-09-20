@@ -224,7 +224,11 @@ export default function FeeCollectionManagement() {
   ))].filter(Boolean)
 
   if (loading) {
-    return <div>Loading...</div>
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-lg text-gray-600">Loading students...</div>
+      </div>
+    )
   }
 
   return (

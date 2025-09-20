@@ -97,7 +97,6 @@ export function BatchManagement() {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-lg font-semibold">Academic Batches</h2>
-          <p className="text-sm text-gray-600">Manage academic year batches and their status</p>
         </div>
         <Button onClick={() => setCreateDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />

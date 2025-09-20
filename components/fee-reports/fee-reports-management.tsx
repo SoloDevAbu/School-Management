@@ -117,7 +117,11 @@ export default function FeeReportsManagement() {
   }
 
   if (loading) {
-    return <div>Loading reports...</div>
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-lg text-gray-600">Loading students...</div>
+      </div>
+    )
   }
 
   if (!reportData) {
@@ -133,7 +137,7 @@ export default function FeeReportsManagement() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-4 md:flex-row md:items-center">
-            <Select value={reportType} onValueChange={setReportType}>
+            {/* <Select value={reportType} onValueChange={setReportType}>
               <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="Report type" />
               </SelectTrigger>
@@ -143,7 +147,7 @@ export default function FeeReportsManagement() {
                 <SelectItem value="outstanding">Outstanding Fees</SelectItem>
                 <SelectItem value="collection">Collection Report</SelectItem>
               </SelectContent>
-            </Select>
+            </Select> */}
             <Select value={selectedBatch} onValueChange={setSelectedBatch}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Select batch" />
@@ -171,14 +175,14 @@ export default function FeeReportsManagement() {
               </SelectContent>
             </Select>
             <div className="flex gap-2 ml-auto">
-              <Button variant="outline" onClick={() => exportReport("excel")} className="flex items-center gap-2">
+              {/* <Button variant="outline" onClick={() => exportReport("excel")} className="flex items-center gap-2">
                 <Download className="h-4 w-4" />
                 Export Excel
               </Button>
               <Button variant="outline" onClick={() => exportReport("pdf")} className="flex items-center gap-2">
                 <FileText className="h-4 w-4" />
                 Export PDF
-              </Button>
+              </Button> */}
             </div>
           </div>
         </CardContent>
