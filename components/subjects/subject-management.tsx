@@ -13,6 +13,8 @@ import { useToast } from "@/hooks/use-toast"
 interface Batch {
   id: string
   name: string
+  startYear: number
+  endYear: number
   isActive: boolean
 }
 
@@ -23,6 +25,8 @@ interface Class {
   batchId: string
   batch: {
     name: string
+    startYear: number
+    endYear: number
   }
 }
 
@@ -39,6 +43,8 @@ interface Subject {
     section: string | null
     batch: {
       name: string
+      startYear: number
+      endYear: number
     }
   }
 }
@@ -60,7 +66,16 @@ export function SubjectManagement() {
       const response = await fetch("/api/batches")
       if (response.ok) {
         const data = await response.json()
-        setBatches(data.filter((batch: Batch) => batch.isActive))
+        const activeBatches = data.filter((batch: Batch) => batch.isActive)
+        activeBatches.sort((a: Batch, b: Batch) => b.startYear - a.startYear)
+
+        setBatches(activeBatches)
+
+        if (activeBatches.length > 0) {
+          setSelectedBatchId(activeBatches[0].id);
+        } else {
+          setSelectedBatchId("all");
+        }
       }
     } catch (error) {
       console.error("Error fetching batches:", error)
@@ -198,7 +213,7 @@ export function SubjectManagement() {
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div>
           <h2 className="text-lg font-semibold">Subject Curriculum</h2>
-          <p className="text-sm text-gray-600">Manage subjects for each class and batch</p>
+          {/* <p className="text-sm text-gray-600">Manage subjects for each class and batch</p> */}
         </div>
         <Button onClick={() => setCreateDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />

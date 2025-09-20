@@ -27,6 +27,8 @@ interface Student {
       batch: {
         id: string
         name: string
+        startYear: number
+        endYear: number
       }
     }
   }[]
@@ -55,6 +57,8 @@ interface FeeStructure {
     name: string
     batch: {
       name: string
+      startYear: number
+      endYear: number
     }
   }
 }
