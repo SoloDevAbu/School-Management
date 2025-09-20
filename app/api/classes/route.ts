@@ -22,6 +22,8 @@ export async function GET(request: Request) {
         batch: {
           select: {
             name: true,
+            startYear: true,
+            endYear: true,
           },
         },
         _count: {
