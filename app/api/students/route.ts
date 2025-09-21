@@ -69,9 +69,8 @@ export async function GET(request: Request) {
         feeCollections: {
           include: {
             feeStructures: {
-              select: {
-                feeCollectionId: true,
-                feeStructureId: true
+              include: {
+                feeStructure: true
               }
             }
           }

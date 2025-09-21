@@ -167,6 +167,14 @@ export function CreateFeeStructureDialog({ open, onOpenChange, onSuccess, classe
                 <SelectItem value="HALF_YEARLY">Half Yearly</SelectItem>
                 <SelectItem value="YEARLY">Yearly</SelectItem>
                 <SelectItem value="ONE_TIME">One Time</SelectItem>
+                <SelectItem value="TUITION">Tuition</SelectItem>
+                <SelectItem value="LIBRARY">Library</SelectItem>
+                <SelectItem value="LABORATORY">Laboratory</SelectItem>
+                <SelectItem value="SPORTS">Sports</SelectItem>
+                <SelectItem value="TRANSPORT">Transport</SelectItem>
+                <SelectItem value="EXAMINATION">Examination</SelectItem>
+                <SelectItem value="DEVELOPMENT">Development</SelectItem>
+                <SelectItem value="MISCELLANEOUS">Miscellaneous</SelectItem>
               </SelectContent>
             </Select>
           </div>

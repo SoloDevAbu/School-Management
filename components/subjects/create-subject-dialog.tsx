@@ -149,6 +149,7 @@ export function CreateSubjectDialog({ open, onOpenChange, onSuccess, classes }: 
                 <SelectItem value="CORE">Core Subject</SelectItem>
                 <SelectItem value="ELECTIVE">Elective Subject</SelectItem>
                 <SelectItem value="EXTRA_CURRICULAR">Extra Curricular</SelectItem>
+                <SelectItem value="PRACTICAL">Practical Subject</SelectItem>
               </SelectContent>
             </Select>
           </div>

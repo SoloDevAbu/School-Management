@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
+import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions)
 
@@ -12,7 +12,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     }
 
     const { name, amount, type, classId, dueDate, isActive } = await request.json()
-    const feeStructureId = params.id
+    const { id: feeStructureId } = await params
 
     // Check if fee structure exists
     const existingFeeStructure = await prisma.feeStructure.findUnique({
@@ -82,7 +82,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions)
 
@@ -90,7 +90,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const feeStructureId = params.id
+    const { id: feeStructureId } = await params
 
     // Check if fee structure exists
     const feeStructure = await prisma.feeStructure.findUnique({
@@ -98,7 +98,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
       include: {
         _count: {
           select: {
-            feeCollections: true,
+            feeCollectionStructure: true,
           },
         },
       },
@@ -109,7 +109,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
     }
 
     // Check if fee structure has associated collections
-    if (feeStructure._count.feeCollections > 0) {
+    if (feeStructure._count.feeCollectionStructure > 0) {
       return NextResponse.json(
         {
           error: "Cannot delete fee structure with associated fee collections. Please remove collections first.",

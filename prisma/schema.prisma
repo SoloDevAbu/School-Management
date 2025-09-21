@@ -149,6 +149,7 @@ enum SubjectType {
   CORE
   ELECTIVE
   EXTRA_CURRICULAR
+  PRACTICAL
 }
 
 // Junction table for Student-Class-Subject relationship
@@ -194,6 +195,14 @@ enum FeeType {
   HALF_YEARLY
   YEARLY
   ONE_TIME
+  TUITION
+  LIBRARY
+  LABORATORY
+  SPORTS
+  TRANSPORT
+  EXAMINATION
+  DEVELOPMENT
+  MISCELLANEOUS
 }
 
 model FeeCollection {
@@ -230,8 +239,8 @@ enum PaymentMethod {
   CASH
   BANK_TRANSFER
   CHEQUE
-  ONLINE
   UPI
+  CARD
 }
 
 enum PaymentStatus {

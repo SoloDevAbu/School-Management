@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma"
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user) {
+    if (!session || !(session as any).user?.id) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
 
@@ -106,7 +106,10 @@ export async function GET(request: NextRequest) {
     // Group students by class
     const studentsByClass = students.reduce(
       (acc, student) => {
-        const key = `${student.studentClasses.includes}-${student.studentClasses.includes(batchId)}`
+        const activeClass = student.studentClasses.find(sc => sc.isActive)
+        if (!activeClass) return acc
+        
+        const key = `${activeClass.class.name}-${activeClass.class.batch.name}`
         if (!acc[key]) {
           acc[key] = []
         }
@@ -135,6 +138,9 @@ export async function GET(request: NextRequest) {
         )
       }, 0)
 
+      // Calculate outstanding amount - if no fees are due but payments were made, outstanding should be 0
+      const outstanding = Math.max(0, classTotalDue - classTotalCollected)
+
       totalDue += classTotalDue
       totalCollected += classTotalCollected
 
@@ -144,7 +150,7 @@ export async function GET(request: NextRequest) {
         totalStudents: classStudents.length,
         totalDue: classTotalDue,
         totalCollected: classTotalCollected,
-        outstanding: classTotalDue - classTotalCollected,
+        outstanding: outstanding,
         collectionPercentage: classTotalDue > 0 ? (classTotalCollected / classTotalDue) * 100 : 0,
       })
     })
@@ -158,7 +164,15 @@ export async function GET(request: NextRequest) {
       include: {
         student: {
           include: {
-            studentClasses: true
+            studentClasses: {
+              include: {
+                class: {
+                  select: {
+                    name: true
+                  }
+                }
+              }
+            }
           },
         },
       },
@@ -169,19 +183,22 @@ export async function GET(request: NextRequest) {
         totalStudents: students.length,
         totalDue,
         totalCollected,
-        outstandingAmount: totalDue - totalCollected,
+        outstandingAmount: Math.max(0, totalDue - totalCollected),
         collectionPercentage: totalDue > 0 ? (totalCollected / totalDue) * 100 : 0,
       },
       classWiseData,
-      recentPayments: recentPayments.map((payment) => ({
-        id: payment.id,
-        studentName: `${payment.student.firstName} ${payment.student.lastName}`,
-        className: payment.student.studentClasses,
-        amount: payment.amountPaid,
-        paymentDate: payment.paymentDate,
-        paymentMethod: payment.paymentMethod,
-        status: payment.status,
-      })),
+      recentPayments: recentPayments.map((payment) => {
+        const activeClass = payment.student.studentClasses.find(sc => sc.isActive)
+        return {
+          id: payment.id,
+          studentName: `${payment.student.firstName} ${payment.student.lastName}`,
+          className: activeClass?.class?.name || 'No Class',
+          amount: payment.amountPaid,
+          paymentDate: payment.paymentDate,
+          paymentMethod: payment.paymentMethod,
+          status: payment.status,
+        }
+      }),
     }
 
     return NextResponse.json(reportData)

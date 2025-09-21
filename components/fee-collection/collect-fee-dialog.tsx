@@ -39,20 +39,22 @@ interface FeePayment {
   paymentDate: string
   paymentMethod: string
   status: string
-  feeStructure: {
-    feeType: string
-    amount: number
-    dueDate: string
-  }
+  remarks?: string
+  feeStructures: {
+    feeStructureId: string
+    feeCollectionId: string
+  }[]
 }
 
 interface FeeStructure {
   id: string
-  feeType: string
+  name: string
+  type: string
   amount: number
-  dueDate: string
+  dueDate: string | null
   class: {
     name: string
+    section: string | null
     batch: {
       name: string
     }
@@ -233,6 +235,32 @@ export default function CollectFeeDialog({
                   <p className="text-lg font-semibold text-red-600">₹{outstandingAmount.toLocaleString()}</p>
                 </div>
               </div>
+              
+              {/* Fee Details */}
+              {applicableFees.length > 0 && (
+                <div className="mt-4 space-y-2">
+                  <Label className="text-sm font-medium">Fee Details</Label>
+                  <div className="space-y-1">
+                    {applicableFees.map((fee) => (
+                      <div key={fee.id} className="flex justify-between items-center text-sm">
+                        <span>{fee.name} ({fee.type})</span>
+                        <div className="flex items-center gap-2">
+                          <span>₹{Number(fee.amount).toLocaleString()}</span>
+                          {fee.dueDate && (
+                            <span className={`text-xs px-2 py-1 rounded ${
+                              new Date(fee.dueDate) < new Date() 
+                                ? 'bg-red-100 text-red-800' 
+                                : 'bg-green-100 text-green-800'
+                            }`}>
+                              Due: {new Date(fee.dueDate).toLocaleDateString()}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 

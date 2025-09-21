@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { Plus, Edit, BookOpen, Trash2 } from "lucide-react"
 import { CreateSubjectDialog } from "./create-subject-dialog"
 import { EditSubjectDialog } from "./edit-subject-dialog"
@@ -58,7 +59,9 @@ export function SubjectManagement() {
   const [loading, setLoading] = useState(true)
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null)
+  const [subjectToDelete, setSubjectToDelete] = useState<Subject | null>(null)
   const { toast } = useToast()
 
   const fetchBatches = async () => {
@@ -130,11 +133,16 @@ export function SubjectManagement() {
     setEditDialogOpen(true)
   }
 
-  const handleDelete = async (subjectId: string) => {
-    if (!confirm("Are you sure you want to delete this subject?")) return
+  const handleDeleteClick = (subject: Subject) => {
+    setSubjectToDelete(subject)
+    setDeleteDialogOpen(true)
+  }
+
+  const handleDelete = async () => {
+    if (!subjectToDelete) return
 
     try {
-      const response = await fetch(`/api/subjects/${subjectId}`, {
+      const response = await fetch(`/api/subjects/${subjectToDelete.id}`, {
         method: "DELETE",
       })
 
@@ -144,6 +152,8 @@ export function SubjectManagement() {
           description: "Subject deleted successfully",
         })
         fetchSubjects()
+        setDeleteDialogOpen(false)
+        setSubjectToDelete(null)
       } else {
         const error = await response.json()
         throw new Error(error.error || "Failed to delete subject")
@@ -195,6 +205,8 @@ export function SubjectManagement() {
         return "secondary"
       case "EXTRA_CURRICULAR":
         return "outline"
+      case "PRACTICAL":
+        return "destructive"
       default:
         return "secondary"
     }
@@ -322,7 +334,7 @@ export function SubjectManagement() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleDelete(subject.id)}
+                  onClick={() => handleDeleteClick(subject)}
                   className="w-full text-red-600 hover:text-red-700"
                 >
                   <Trash2 className="mr-1 h-4 w-4" />
@@ -348,6 +360,34 @@ export function SubjectManagement() {
         onSuccess={fetchSubjects}
         classes={classes}
       />
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Subject</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{subjectToDelete?.name}"? This action cannot be undone.
+              {subjectToDelete && (
+                <div className="mt-2 text-sm">
+                  <strong>Class:</strong> {subjectToDelete.class.name}
+                  {subjectToDelete.class.section && ` - ${subjectToDelete.class.section}`}
+                  <br />
+                  <strong>Batch:</strong> {subjectToDelete.class.batch.name}
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              Delete Subject
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

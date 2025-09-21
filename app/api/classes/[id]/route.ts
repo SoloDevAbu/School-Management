@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions)
 
@@ -12,7 +12,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     }
 
     const { name, section, batchId, capacity, isActive } = await request.json()
-    const classId = params.id
+    const { id: classId } = await params
 
     // Check if class exists
     const existingClass = await prisma.class.findUnique({
@@ -82,7 +82,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions)
 
@@ -90,7 +90,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const classId = params.id
+    const { id: classId } = await params
 
     // Check if class exists
     const classItem = await prisma.class.findUnique({
