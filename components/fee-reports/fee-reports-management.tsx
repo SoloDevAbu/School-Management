@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Download, FileText, TrendingUp, Users, DollarSign } from "lucide-react"
+import { Download, FileText, TrendingUp, Users, IndianRupee } from "lucide-react"
 import { toast } from "sonner"
 import { format } from "date-fns"
 
@@ -78,12 +78,12 @@ export default function FeeReportsManagement() {
 
       if (batchesRes.ok) {
         const batchData = await batchesRes.json()
-        setBatches(batchData.map((b: any) => b.name))
+        setBatches(batchData.map((b: { name: string }) => b.name))
       }
 
       if (classesRes.ok) {
-        const classData = await classesRes.json()
-        setClasses([...new Set(classData.map((c: any) => c.name))])
+        const classData = await classesRes.json() as { name: string }[]
+        setClasses([...new Set(classData.map((c) => c.name))])
       }
     } catch (error) {
       toast.error("Failed to fetch filter options")
@@ -202,7 +202,7 @@ export default function FeeReportsManagement() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Due</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <IndianRupee className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">₹{reportData.summary.totalDue.toLocaleString()}</div>
@@ -221,12 +221,12 @@ export default function FeeReportsManagement() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Collection Rate</CardTitle>
-            <TrendingUp className="h-4 w-4 text-blue-600" />
+            <CardTitle className="text-sm font-medium">Outstanding</CardTitle>
+            <IndianRupee className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
-              {reportData.summary.collectionPercentage.toFixed(1)}%
+            <div className="text-2xl font-bold text-red-600">
+              ₹{reportData.summary.outstandingAmount.toLocaleString()}
             </div>
           </CardContent>
         </Card>
@@ -247,7 +247,6 @@ export default function FeeReportsManagement() {
                 <TableHead>Total Due</TableHead>
                 <TableHead>Collected</TableHead>
                 <TableHead>Outstanding</TableHead>
-                <TableHead>Collection %</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -259,19 +258,6 @@ export default function FeeReportsManagement() {
                   <TableCell>₹{classData.totalDue.toLocaleString()}</TableCell>
                   <TableCell className="text-green-600">₹{classData.totalCollected.toLocaleString()}</TableCell>
                   <TableCell className="text-red-600">₹{classData.outstanding.toLocaleString()}</TableCell>
-                  <TableCell>
-                    <Badge
-                      className={
-                        classData.collectionPercentage >= 80
-                          ? "bg-green-100 text-green-800"
-                          : classData.collectionPercentage >= 60
-                            ? "bg-yellow-100 text-yellow-800"
-                            : "bg-red-100 text-red-800"
-                      }
-                    >
-                      {classData.collectionPercentage.toFixed(1)}%
-                    </Badge>
-                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

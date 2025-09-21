@@ -1,6 +1,7 @@
 "use client"
 
 import { signOut } from "next-auth/react"
+import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -11,7 +12,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { LogOut, Settings, User } from "lucide-react"
+import { LogOut, Settings, User, Menu } from "lucide-react"
+import { useMobileSidebar } from "./mobile-sidebar-provider"
 
 interface HeaderProps {
   user: {
@@ -23,17 +25,48 @@ interface HeaderProps {
 }
 
 export function DashboardHeader({ user }: HeaderProps) {
+  const { toggle } = useMobileSidebar()
+  const pathname = usePathname()
+  
   const initials = user.name
     .split(" ")
     .map((n) => n[0])
     .join("")
     .toUpperCase()
 
+  // Function to get page name from pathname
+  const getPageName = (path: string) => {
+    const pathSegments = path.split('/').filter(Boolean)
+    
+    if (pathSegments.length === 0 || pathSegments[0] === 'dashboard') {
+      return 'Dashboard'
+    }
+    
+    const pageName = pathSegments[0]
+    
+    // Convert kebab-case to Title Case
+    return pageName
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ')
+  }
+
+  const currentPageName = getPageName(pathname)
+
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">
-      <div className="flex items-center justify-between px-6 py-4">
-        <div>
-          <h2 className="text-lg font-semibold text-gray-900">Dashboard</h2>
+      <div className="flex items-center justify-between px-4 lg:px-6 py-4">
+        <div className="flex items-center space-x-3">
+          {/* Mobile Menu Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="lg:hidden"
+            onClick={toggle}
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+          <h2 className="text-lg font-semibold text-gray-900">{currentPageName}</h2>
         </div>
         <div className="flex items-center space-x-4">
           <DropdownMenu>

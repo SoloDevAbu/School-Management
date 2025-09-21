@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions)
 
@@ -12,7 +12,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     }
 
     const { name, startYear, endYear, isActive } = await request.json()
-    const batchId = params.id
+    const { id: batchId } = await params
 
     // Check if batch exists
     const existingBatch = await prisma.batch.findUnique({
@@ -69,7 +69,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions)
 
@@ -77,7 +77,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const batchId = params.id
+    const { id: batchId } = await params
 
     // Check if batch exists
     const batch = await prisma.batch.findUnique({

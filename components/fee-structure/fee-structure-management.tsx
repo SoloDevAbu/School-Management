@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Plus, Edit, DollarSign, Trash2 } from "lucide-react"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
+import { Plus, Edit, IndianRupee, Trash2 } from "lucide-react"
 import { CreateFeeStructureDialog } from "./create-fee-structure-dialog"
 import { EditFeeStructureDialog } from "./edit-fee-structure-dialog"
 import { useToast } from "@/hooks/use-toast"
@@ -59,7 +60,9 @@ export function FeeStructureManagement() {
   const [loading, setLoading] = useState(true)
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedFeeStructure, setSelectedFeeStructure] = useState<FeeStructure | null>(null)
+  const [feeStructureToDelete, setFeeStructureToDelete] = useState<FeeStructure | null>(null)
   const { toast } = useToast()
 
   const fetchBatches = async () => {
@@ -131,11 +134,16 @@ export function FeeStructureManagement() {
     setEditDialogOpen(true)
   }
 
-  const handleDelete = async (feeStructureId: string) => {
-    if (!confirm("Are you sure you want to delete this fee structure?")) return
+  const handleDeleteClick = (feeStructure: FeeStructure) => {
+    setFeeStructureToDelete(feeStructure)
+    setDeleteDialogOpen(true)
+  }
+
+  const handleDelete = async () => {
+    if (!feeStructureToDelete) return
 
     try {
-      const response = await fetch(`/api/fee-structures/${feeStructureId}`, {
+      const response = await fetch(`/api/fee-structures/${feeStructureToDelete.id}`, {
         method: "DELETE",
       })
 
@@ -145,6 +153,8 @@ export function FeeStructureManagement() {
           description: "Fee structure deleted successfully",
         })
         fetchFeeStructures()
+        setDeleteDialogOpen(false)
+        setFeeStructureToDelete(null)
       } else {
         const error = await response.json()
         throw new Error(error.error || "Failed to delete fee structure")
@@ -200,15 +210,31 @@ export function FeeStructureManagement() {
         return "destructive"
       case "ONE_TIME":
         return "secondary"
+      case "TUITION":
+        return "default"
+      case "LIBRARY":
+        return "secondary"
+      case "LABORATORY":
+        return "destructive"
+      case "SPORTS":
+        return "outline"
+      case "TRANSPORT":
+        return "secondary"
+      case "EXAMINATION":
+        return "default"
+      case "DEVELOPMENT":
+        return "secondary"
+      case "MISCELLANEOUS":
+        return "outline"
       default:
         return "secondary"
     }
   }
 
   const formatAmount = (amount: string) => {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat("en-IN", {
       style: "currency",
-      currency: "USD",
+      currency: "INR",
     }).format(Number.parseFloat(amount))
   }
 
@@ -266,7 +292,7 @@ export function FeeStructureManagement() {
               </SelectContent>
             </Select>
             <div className="text-sm text-gray-600 flex items-center">
-              <DollarSign className="mr-1 h-4 w-4" />
+              <IndianRupee className="mr-1 h-4 w-4" />
               {feeStructures.length} fee structures found
             </div>
           </div>
@@ -277,7 +303,7 @@ export function FeeStructureManagement() {
       {feeStructures.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <DollarSign className="h-12 w-12 text-gray-400 mb-4" />
+            <IndianRupee className="h-12 w-12 text-gray-400 mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No fee structures found</h3>
             <p className="text-gray-600 text-center mb-4">
               {selectedBatchId !== "all" || selectedClassId !== "all"
@@ -342,7 +368,7 @@ export function FeeStructureManagement() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleDelete(feeStructure.id)}
+                  onClick={() => handleDeleteClick(feeStructure)}
                   className="w-full text-red-600 hover:text-red-700"
                 >
                   <Trash2 className="mr-1 h-4 w-4" />
@@ -368,6 +394,36 @@ export function FeeStructureManagement() {
         onSuccess={fetchFeeStructures}
         classes={classes}
       />
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Fee Structure</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{feeStructureToDelete?.name}"? This action cannot be undone.
+              {feeStructureToDelete && (
+                <div className="mt-2 text-sm">
+                  <strong>Amount:</strong> {formatAmount(feeStructureToDelete.amount)}
+                  <br />
+                  <strong>Class:</strong> {feeStructureToDelete.class.name}
+                  {feeStructureToDelete.class.section && ` - ${feeStructureToDelete.class.section}`}
+                  <br />
+                  <strong>Batch:</strong> {feeStructureToDelete.class.batch.name}
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              Delete Fee Structure
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
