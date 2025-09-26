@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions)
 
@@ -13,7 +13,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     }
 
     const { name, email, password, role, isActive } = await request.json()
-    const userId = params.id
+    const { id: userId } = await params
 
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
@@ -70,7 +70,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions)
 
@@ -78,7 +78,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const userId = params.id
+    const { id: userId } = await params
 
     // Check if user exists and is not an admin
     const user = await prisma.user.findUnique({

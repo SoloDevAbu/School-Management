@@ -171,6 +171,7 @@ export function EditSubjectDialog({ open, onOpenChange, subject, onSuccess, clas
                 <SelectItem value="CORE">Core Subject</SelectItem>
                 <SelectItem value="ELECTIVE">Elective Subject</SelectItem>
                 <SelectItem value="EXTRA_CURRICULAR">Extra Curricular</SelectItem>
+                <SelectItem value="PRACTICAL">Practical Subject</SelectItem>
               </SelectContent>
             </Select>
           </div>

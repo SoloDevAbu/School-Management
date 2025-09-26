@@ -35,11 +35,10 @@ interface FeePayment {
   paymentMethod: string
   status: string
   remarks?: string
-  feeStructure: {
-    feeType: string
-    amount: number
-    dueDate: string
-  }
+  feeStructures: {
+    feeStructureId: string
+    feeCollectionId: string
+  }[]
 }
 
 interface PaymentHistoryDialogProps {

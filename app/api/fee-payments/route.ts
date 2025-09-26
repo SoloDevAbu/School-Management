@@ -70,20 +70,28 @@ export async function GET(request: NextRequest) {
 
     const where = studentId ? { studentId } : {}
 
-    const feePayments = await prisma.feePayment.findMany({
+    const feePayments = await prisma.feeCollection.findMany({
       where,
       include: {
         student: {
           include: {
-            class: {
+            studentClasses: {
               include: {
-                batch: true,
+                class: {
+                  include: {
+                    batch: true,
+                  },
+                },
               },
             },
           },
         },
-        feeStructure: true,
-        createdByUser: {
+        feeStructures: {
+          include: {
+            feeStructure: true,
+          },
+        },
+        collectedBy: {
           select: {
             name: true,
             email: true,

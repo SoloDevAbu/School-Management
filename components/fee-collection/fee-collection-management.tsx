@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Search, DollarSign, Clock, CheckCircle, AlertCircle } from "lucide-react"
+import { Search, IndianRupee, Clock, CheckCircle, AlertCircle } from "lucide-react"
 import { toast } from "sonner"
 import CollectFeeDialog from "./collect-fee-dialog"
 import PaymentHistoryDialog from "./payment-history-dialog"
@@ -41,20 +41,22 @@ interface FeePayment {
   paymentDate: string
   paymentMethod: string
   status: string
-  feeStructure: {
-    feeType: string
-    amount: number
-    dueDate: string
-  }
+  remarks?: string
+  feeStructures: {
+    feeStructureId: string
+    feeCollectionId: string
+  }[]
 }
 
 interface FeeStructure {
   id: string
-  feeType: string
+  name: string
+  type: string
   amount: number
-  dueDate: string
+  dueDate: string | null
   class: {
     name: string
+    section: string | null
     batch: {
       name: string
       startYear: number
@@ -155,15 +157,19 @@ export default function FeeCollectionManagement() {
     )
 
     if (applicableFees.length === 0) return "no-fees"
-    console.log("student response", student)
 
     const paidFees = (student.feeCollections ?? []).filter((payment) => payment.status === "PAID")
-    const totalDue = applicableFees.reduce((sum, fee) => sum + fee.amount, 0)
-    const totalPaid = paidFees.reduce((sum, payment) => sum + payment.amountPaid, 0)
+    const totalDue = applicableFees.reduce((sum, fee) => sum + Number(fee.amount), 0)
+    const totalPaid = paidFees.reduce((sum, payment) => sum + Number(payment.amountPaid), 0)
 
     if (totalPaid >= totalDue) return "paid"
 
-    const hasOverdue = applicableFees.some((fee) => new Date(fee.dueDate) < currentDate)
+    // Check if any fee has passed its due date
+    const hasOverdue = applicableFees.some((fee) => {
+      if (!fee.dueDate) return false
+      return new Date(fee.dueDate) < currentDate
+    })
+
     if (hasOverdue && totalPaid < totalDue) return "overdue"
 
     return "pending"
@@ -194,8 +200,10 @@ export default function FeeCollectionManagement() {
         )
       case "no-class":
         return <Badge variant="secondary">No Class</Badge>
-      default:
+      case "no-fees":
         return <Badge variant="secondary">No Fees</Badge>
+      default:
+        return <Badge variant="secondary">Unknown</Badge>
     }
   }
 
@@ -213,6 +221,22 @@ export default function FeeCollectionManagement() {
       .reduce((sum, payment) => sum + Number(payment.amountPaid), 0)
 
     return Math.max(0, totalDue - totalPaid)
+  }
+
+  const getEarliestDueDate = (student: Student) => {
+    const activeClass = student.studentClasses.find((sc) => sc.isActive)
+    if (!activeClass) return null
+
+    const applicableFees = (feeStructures ?? []).filter(
+      (fee) => fee.class.name === activeClass.class.name && fee.class.batch.name === activeClass.class.batch.name,
+    )
+
+    const dueDates = applicableFees
+      .filter(fee => fee.dueDate)
+      .map(fee => new Date(fee.dueDate!))
+      .sort((a, b) => a.getTime() - b.getTime())
+
+    return dueDates.length > 0 ? dueDates[0] : null
   }
 
   const uniqueBatches = [...new Set(students.flatMap(s => 
@@ -238,7 +262,7 @@ export default function FeeCollectionManagement() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Students</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <IndianRupee className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{students.length}</div>
@@ -331,6 +355,7 @@ export default function FeeCollectionManagement() {
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="overdue">Overdue</SelectItem>
                 <SelectItem value="no-class">No Class</SelectItem>
+                <SelectItem value="no-fees">No Fees</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -349,6 +374,7 @@ export default function FeeCollectionManagement() {
                 <TableHead>Batch</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Outstanding</TableHead>
+                <TableHead>Due Date</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -368,6 +394,18 @@ export default function FeeCollectionManagement() {
                   <TableCell>{getStatusBadge(getPaymentStatus(student))}</TableCell>
                   <TableCell>₹{getOutstandingAmount(student).toLocaleString()}</TableCell>
                   <TableCell>
+                    {(() => {
+                      const dueDate = getEarliestDueDate(student)
+                      if (!dueDate) return '-'
+                      const isOverdue = dueDate < new Date()
+                      return (
+                        <span className={isOverdue ? 'text-red-600 font-medium' : 'text-gray-600'}>
+                          {dueDate.toLocaleDateString()}
+                        </span>
+                      )
+                    })()}
+                  </TableCell>
+                  <TableCell>
                     <div className="flex gap-2">
                       <Button
                         variant="outline"
@@ -376,7 +414,7 @@ export default function FeeCollectionManagement() {
                           setSelectedStudent(student)
                           setCollectFeeOpen(true)
                         }}
-                        disabled={getPaymentStatus(student) === "paid" || getPaymentStatus(student) === "no-class"}
+                        disabled={getPaymentStatus(student) === "paid" || getPaymentStatus(student) === "no-class" || getPaymentStatus(student) === "no-fees"}
                       >
                         Collect Fee
                       </Button>
